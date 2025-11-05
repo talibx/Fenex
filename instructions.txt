@@ -1,0 +1,125 @@
+🧾 Project Brief: Local Inventory Management System Enhancement (Laravel Website)
+1. System Overview
+
+This is a Laravel-based local inventory and product management website that I use to track my stock and shipments to Amazon.ae.
+
+The website keeps records of products and inventories.
+
+When I ship products to Amazon, I update the quantity here to know how many pieces remain locally.
+
+When I receive new stock from China or local suppliers, I first add it here before sending part of it to Amazon.
+
+This system helps me manage local stock levels and track what has been shipped or kept for local sales.
+
+💡 Note:
+The website is not directly connected to Amazon — I only input the data manually here.
+All real sales and deductions happen on the Amazon.ae hub, and I just record the related data in my local system for tracking and reports.
+
+2. Current Main Pages
+
+Products Page
+
+Shows all products I own.
+
+Displays product details (SKU, name, cost, etc.).
+
+Inventory Page
+
+Shows how many pieces I have in stock.
+
+Allows adding or subtracting quantities (e.g., new stock arrivals, shipments to Amazon).
+
+When I add inventory, it shows a list of products so I can update their quantities.
+
+3. New Sections to Add
+3.1 Sales & Profit Section
+
+Purpose: Track sales and profit manually using uploaded data.
+
+Features:
+
+Add a record per month.
+
+Upload an Excel file containing sales and profit calculations.
+
+Option to view monthly summaries and totals.
+
+3.2 Deductions Section
+
+Purpose: Track various deductions and expenses related to Amazon or operations.
+
+Features:
+
+Add new deductions with:
+
+Type (e.g., fees, shipping, advertising, etc.)
+
+Note
+
+Date
+
+Month
+
+Ability to filter and view deductions by month or year.
+
+3.3 Dashboard (Main Page)
+
+Purpose: Provide an overview of all data in one place.
+
+Features:
+
+Display charts and summaries for:
+
+Inventory status
+
+Sales and profit
+
+Deductions
+
+Filter data by:
+
+Month
+
+Year
+
+All time
+
+Show visual analytics (graphs, totals, KPIs, etc.) in a clean, modern layout.
+
+3.4 Notes Section
+
+Purpose: Keep general notes or reminders.
+
+Features:
+
+Add, edit, and delete notes.
+
+Notes can be tagged or categorized if needed.
+
+Simple, clean interface for quick access.
+
+4. Technical Notes
+
+Framework: Laravel (latest)
+
+Database: MySQL / MariaDB
+
+Frontend: Blade templates (optionally Vue.js or React for dynamic sections)
+
+Server: Linux-based (Nginx/Apache)
+
+Version Control: GitHub / GitLab
+
+Manual Data Entry Only: No API integration with Amazon; all inputs are entered manually.
+
+5. Desired Outcome
+
+A modern, fast, and responsive interface.
+
+Easy-to-use admin dashboard.
+
+Clean analytics and chart visuals.
+
+Organized data sections for inventory, sales, profit, deductions, and notes.
+
+Filters for month, year, or all data.

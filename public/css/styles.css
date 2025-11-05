@@ -1,0 +1,57 @@
+body {
+    padding-top: 65px;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.table img {
+    width: 50px;
+    height: auto;
+}
+
+
+/* public/css/app.css */
+.table {
+    font-size: 0.875rem; /* Adjust font size for better readability */
+}
+
+.img-thumbnail {
+    border-radius: 8px;
+    max-width: 100px;
+    height: auto;
+}
+
+.btn {
+    border-radius: 20px;
+}
+
+
+/* Example custom CSS for navbar */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: Add shadow for depth */
+}
+
+.navbar-brand img {
+    margin-right: 10px; /* Optional: Adjust logo margin */
+}
+
+.dropdown-menu {
+    background-color: #343a40; /* Optional: Customize dropdown menu background */
+}
+
+.dropdown-item {
+    color: #ffffff; /* Optional: Customize dropdown item text color */
+}
+
+#navbarNav{
+    background-color: rgb(31, 41, 55) !important;
+}
+
+

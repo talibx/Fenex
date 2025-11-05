@@ -1,0 +1,40 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.2",
+        "alpinejs": "^3.4.2",
+        "autoprefixer": "^10.4.2",
+        "axios": "^1.6.4",
+        "laravel-vite-plugin": "^1.0.0",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.1.0",
+        "vite": "^5.0.0",
+        "vite-plugin-static-copy": "^1.0.6"
+    },
+    "dependencies": {
+        "datatables.net-autofill-zf": "^2.7.0",
+        "datatables.net-buttons-zf": "^3.1.2",
+        "datatables.net-colreorder-zf": "^2.0.4",
+        "datatables.net-datetime": "^1.5.4",
+        "datatables.net-fixedcolumns-zf": "^5.0.0",
+        "datatables.net-fixedheader-zf": "^4.0.1",
+        "datatables.net-keytable-zf": "^2.12.1",
+        "datatables.net-responsive-zf": "^3.0.3",
+        "datatables.net-rowgroup-zf": "^1.5.0",
+        "datatables.net-rowreorder-zf": "^1.5.0",
+        "datatables.net-scroller-zf": "^2.4.3",
+        "datatables.net-searchbuilder-zf": "^1.8.0",
+        "datatables.net-searchpanes-zf": "^2.3.2",
+        "datatables.net-select-zf": "^2.1.0",
+        "datatables.net-staterestore-zf": "^1.4.1",
+        "datatables.net-zf": "^2.1.6",
+        "jquery": "^3.7.1",
+        "jszip": "^3.10.1",
+        "pdfmake": "^0.2.12"
+    }
+}
