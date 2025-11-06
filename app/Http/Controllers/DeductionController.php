@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Deduction;
 use Illuminate\Http\Request;
-use App\Models\Year;
-use App\Models\Month;
 use App\Models\User;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Storage;
@@ -47,11 +45,9 @@ public function index(Request $request)
     $deductions = $query->orderByDesc('date')->paginate(20)->withQueryString();
 
     // ===== Year & Month Filter Options =====
-    $years = Year::orderByDesc('year')->pluck('year');
 
-    // ===== Month lookup (number => name) =====
-    $months = Month::orderBy('number')->pluck('name_en', 'number');
-
+    $years = Sale::getYears();
+    $months = Sale::getMonths();
     $types = Deduction::getTypes(); // Get from model
     $hubs = Deduction::getHubs(); // Get from model
 

@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Year;
-use App\Models\Month;
 use App\Models\User;
 
 class Sale extends Model
@@ -16,11 +14,10 @@ class Sale extends Model
     protected $table = 'sales';
 
     protected $fillable = [
-        'year_id',
-        'month_id',
         'hub',
         'user_id',
         'file_path',
+        'date',
         'order_sold',
         'order_returned',
         'total_revenue',
@@ -54,15 +51,38 @@ class Sale extends Model
         return self::HUBS;
     }
 
-    // relationships
-    public function year()
-    {
-        return $this->belongsTo(Year::class, 'year_id');
-    }
+    public const YEARS = [
+        '2022' => '2022',
+        '2023' => '2023',
+        '2024' => '2024',
+        '2025' => '2025',
+        '2026' => '2026',
+        '2027' => '2027',
+    ];
+    
+    public const MONTHS = [
+        'january' => 'January',
+        'february' => 'February',
+        'march' => 'March',
+        'april' => 'April',
+        'may' => 'May',
+        'june' => 'June',
+        'july' => 'July',
+        'august' => 'August',
+        'september' => 'September',
+        'october' => 'October',
+        'november' => 'November',
+        'december' => 'December',
+    ];
 
-    public function month()
+    public static function getMonths()
     {
-        return $this->belongsTo(Month::class, 'month_id');
+        return self::MONTHS;
+    }
+    
+    public static function getYears()
+    {
+        return self::YEARS;
     }
 
     public function user()

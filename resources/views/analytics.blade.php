@@ -3,166 +3,182 @@
 @section('title', 'Analytics Overview')
 
 @section('content')
+<style>
+    /* ===== KPI CARDS ===== */
+    .stats-card {
+        border-radius: 15px;
+        padding: 1.2rem;
+        color: white;
+        position: relative;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .stats-card.revenue { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
+    .stats-card.cost { background: linear-gradient(135deg,#f093fb 0%,#f5576c 100%); }
+    .stats-card.profit { background: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); }
+    .stats-card.deductions { background: linear-gradient(135deg,#43e97b 0%,#38f9d7 100%); }
+
+    .stats-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+    .stats-value { font-size: 1.8rem; font-weight: 700; margin-top: 0.5rem; }
+
+    /* ===== CHART CARDS ===== */
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .chart-card h5 { font-weight: 600; margin-bottom: 1rem; }
+    .chart-card {
+    position: relative;
+    width: 100%;
+    height: 350px; /* fixed height to prevent infinite resize */
+    margin-bottom: 2rem;
+}
+@media (max-width: 768px) {
+    .chart-card {
+        height: 300px; /* slightly shorter for mobile */
+    }
+}
+    
+</style>
+
 <div class="container-fluid py-4">
 
-    {{-- ======= HEADER & FILTERS ======= --}}
+    <!-- HEADER + FILTERS -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-3 mb-md-0">📊 Business Analytics</h3>
+        <h2 class="fw-bold mb-3 mb-md-0">
+            <i class="fas fa-chart-line text-primary"></i> Business Analytics
+        </h2>
 
-        <div class="text-center mb-2 mb-md-0">
-            <form action="{{ route('analytics') }}" method="GET" class="d-flex gap-2 align-items-center mb-3">
+        <form action="{{ route('analytics') }}" method="GET" class="d-flex gap-2 flex-wrap align-items-center">
+            <select name="hub" class="form-select form-select-sm" style="max-width: 120px;">
+                <option value="">Hub</option>
+                @foreach($hubs as $hub)
+                    <option value="{{ $hub }}" {{ request('hub')==$hub?'selected':'' }}>{{ $hub }}</option>
+                @endforeach
+            </select>
 
-                 <select name="hub" id="hubFilter" class="form-select form-select-sm" style="max-width: 120px;">
-                    <option value="">Hub</option>
-                    @foreach($hubs as $hub)
-                        <option value="{{ $hub }}" {{ request('hub') == $hub ? 'selected' : '' }}>
-                            {{ $hub }}
-                        </option>
-                    @endforeach
-                </select>
+            <select name="year" id="yearFilter" class="form-select form-select-sm" style="max-width:120px;">
+                <option value="">All Years</option>
+                @foreach($years as $year)
+                    <option value="{{ $year }}" {{ request('year')==$year?'selected':'' }}>{{ $year }}</option>
+                @endforeach
+            </select>
 
+            <select name="month" id="monthFilter" class="form-select form-select-sm" style="max-width:120px;" {{ request('year')?'':'disabled' }}>
+                <option value="">All Months</option>
+                @foreach($months as $num=>$name)
+                    <option value="{{ $num }}" {{ request('month')==$num?'selected':'' }}>{{ $name }}</option>
+                @endforeach
+            </select>
 
-                <select name="year" id="yearFilter" class="form-select form-select-sm" style="max-width: 120px;">
-                    <option value="">All Years</option>
-                    @foreach($years as $year)
-                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
-                            {{ $year }}
-                        </option>
-                    @endforeach
-                </select>
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fas fa-filter"></i> Filter
+            </button>
 
-                <select name="month" id="monthFilter" class="form-select form-select-sm" style="max-width: 120px;" {{ request('year') ? '' : 'disabled' }}>
-                    <option value="">All Months</option>
-                    @foreach($months as $index => $name)
-                        <option value="{{ $index }}" {{ request('month') == $index ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-filter"></i> Filter
-                </button>
-                
-                @if(request('year') || request('month'))
-                    <a href="{{ route('analytics') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Clear
-                    </a>
-                @endif
-            </form>
-
-        </div>
+            @if(request('hub') || request('year') || request('month'))
+                <a href="{{ route('analytics') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            @endif
+        </form>
     </div>
 
-    {{-- ======= KPI CARDS ======= --}}
+    <!-- KPI CARDS -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted fw-semibold">Total Revenue</h6>
-                    <h4 class="text-success fw-bold mt-2">{{ number_format($totalRevenue, 2) }} AED</h4>
-                    <small class="text-muted">Sales across all hubs</small>
-                </div>
+            <div class="stats-card revenue text-white text-center">
+                <div class="stats-label">Total Revenue</div>
+                <div class="stats-value">{{ number_format($totalRevenue,2) }} AED</div>
+                <small>All hubs</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted fw-semibold">Total Cost</h6>
-                    <h4 class="text-danger fw-bold mt-2">{{ number_format($totalCost, 2) }} AED</h4>
-                    <small class="text-muted">All product costs</small>
-                </div>
+            <div class="stats-card cost text-white text-center">
+                <div class="stats-label">Total Cost</div>
+                <div class="stats-value">{{ number_format($totalCost,2) }} AED</div>
+                <small>All products</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted fw-semibold">Total Profit</h6>
-                    <h4 class="{{ $totalProfit >= 0 ? 'text-success' : 'text-danger' }} fw-bold mt-2">
-                        {{ number_format($totalProfit, 2) }} AED
-                    </h4>
-                    <small class="text-muted">Net result (Revenue - Cost)</small>
-                </div>
+            <div class="stats-card profit text-white text-center">
+                <div class="stats-label">Total Profit</div>
+                <div class="stats-value">{{ number_format($totalProfit,2) }} AED</div>
+                <small>Revenue - Cost</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted fw-semibold">Total Deductions</h6>
-                    <h4 class="text-danger fw-bold mt-2">{{ number_format($totalDeductions, 2) }} AED</h4>
-                    <small class="text-muted">Operational expenses</small>
-                </div>
+            <div class="stats-card deductions text-white text-center">
+                <div class="stats-label">Total Deductions</div>
+                <div class="stats-value">{{ number_format($totalDeductions,2) }} AED</div>
+                <small>Operational expenses</small>
             </div>
         </div>
     </div>
 
-    {{-- ======= CHARTS SECTION ======= --}}
+    <!-- CHARTS -->
     <div class="row g-4">
-        {{-- SALES PROFIT LINE CHART --}}
         <div class="col-12 col-lg-8">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow"></i> Monthly Profit Trend</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="salesChart" height="100"></canvas>
-                </div>
+            <div class="chart-card">
+                <h5><i class="fas fa-chart-line text-primary"></i> Monthly Profit Trend</h5>
+                <canvas id="profitChart" height="100"></canvas>
             </div>
         </div>
 
-        {{-- DEDUCTIONS PIE CHART --}}
         <div class="col-12 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart"></i> Deductions Breakdown</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="deductionsChart" height="220"></canvas>
-                </div>
+            <div class="chart-card">
+                <h5><i class="fas fa-chart-pie text-primary"></i> Deductions Breakdown</h5>
+                <canvas id="deductionsChart" height="220"></canvas>
             </div>
         </div>
     </div>
 
-    {{-- ======= INVENTORY STATUS ======= --}}
-    <div class="card shadow-sm border-0 mt-4">
-        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h6 class="fw-bold mb-0"><i class="bi bi-box-seam"></i> Inventory Overview</h6>
-            <a href="{{ route('inventories.index') }}" class="btn btn-sm btn-outline-secondary">
-                View Inventory
-            </a>
+    <!-- INVENTORY OVERVIEW -->
+    <div class="row mt-4 g-3">
+        <div class="col-12 col-md-3">
+            <div class="stats-card revenue text-center">
+                <div class="stats-label">Total Products</div>
+                <div class="stats-value">{{ $totalProducts }}</div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row text-center">
-                <div class="col-6 col-md-3">
-                    <h5 class="fw-bold text-primary">{{ $totalProducts }}</h5>
-                    <small class="text-muted">Total Products</small>
-                </div>
-                <div class="col-6 col-md-3">
-                    <h5 class="fw-bold text-success">{{ $totalStock }}</h5>
-                    <small class="text-muted">Total Stock</small>
-                </div>
-                <div class="col-6 col-md-3">
-                    <h5 class="fw-bold text-warning">{{ $lowStock }}</h5>
-                    <small class="text-muted">Low Stock</small>
-                </div>
-                <div class="col-6 col-md-3">
-                    <h5 class="fw-bold text-danger">{{ $outOfStock }}</h5>
-                    <small class="text-muted">Out of Stock</small>
-                </div>
+        <div class="col-12 col-md-3">
+            <div class="stats-card profit text-center">
+                <div class="stats-label">Total Stock</div>
+                <div class="stats-value">{{ $totalStock }}</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="stats-card cost text-center">
+                <div class="stats-label">Low Stock</div>
+                <div class="stats-value">{{ $lowStock }}</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="stats-card deductions text-center">
+                <div class="stats-label">Out of Stock</div>
+                <div class="stats-value">{{ $outOfStock }}</div>
             </div>
         </div>
     </div>
 
 </div>
 
-{{-- ======= CHART.JS SCRIPTS ======= --}}
+<!-- CHARTS.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
 
-    // ===== SALES PROFIT LINE CHART =====
-    const ctx1 = document.getElementById('salesChart');
-    new Chart(ctx1, {
+    // Profit Line Chart
+    new Chart(document.getElementById('profitChart').getContext('2d'), {
         type: 'line',
         data: {
             labels: @json($chartMonths),
@@ -180,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: { beginAtZero: true, title: { display: true, text: 'AED' } },
                 x: { title: { display: true, text: 'Month' } }
@@ -191,9 +208,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ===== DEDUCTIONS PIE CHART =====
-    const ctx2 = document.getElementById('deductionsChart');
-    new Chart(ctx2, {
+    // Deductions Pie Chart
+    new Chart(document.getElementById('deductionsChart').getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: @json($deductionLabels),
@@ -201,14 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 label: 'Deductions',
                 data: @json($deductionAmounts),
                 backgroundColor: [
-                    '#ff6384','#36a2eb','#ffce56','#8e44ad','#2ecc71',
-                    '#e67e22','#f39c12','#d35400','#1abc9c','#3498db'
+                    '#FF6384','#36A2EB','#FFCE56','#8E44AD','#2ECC71',
+                    '#E67E22','#F39C12','#D35400','#1ABC9C','#3498DB'
                 ],
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom' },
                 tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} AED` } }
@@ -216,34 +233,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
-     // Year-Month filter dependency
+    // Enable month filter only if year selected
     const yearFilter = document.getElementById('yearFilter');
     const monthFilter = document.getElementById('monthFilter');
 
-    // Function to update month filter state
-    function updateMonthFilterState() {
-        const yearValue = yearFilter.value;
-        
-        if (!yearValue || yearValue === '') {
-            // Disable month filter if year is not selected
+    function updateMonthState() {
+        if (!yearFilter.value) {
             monthFilter.disabled = true;
-            monthFilter.value = ''; // Reset month selection
-            monthFilter.classList.add('text-muted');
+            monthFilter.value = '';
         } else {
-            // Enable month filter if year is selected
             monthFilter.disabled = false;
-            monthFilter.classList.remove('text-muted');
         }
     }
-
-    // Initialize on page load
-    updateMonthFilterState();
-
-    // Update when year changes
-    yearFilter.addEventListener('change', function() {
-        updateMonthFilterState();
-    });
+    updateMonthState();
+    yearFilter.addEventListener('change', updateMonthState);
 
 });
 </script>

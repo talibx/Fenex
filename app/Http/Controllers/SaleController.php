@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
-use App\Models\Year;
-use App\Models\Month;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,70 +10,57 @@ class SaleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth'); // require auth, remove if not needed
+        $this->middleware('auth');
     }
 
-public function index(Request $request)
-{
-    // Validate optional filter input
-    $request->validate([
-        'year' => 'nullable|integer',
-        'month' => 'nullable|integer|min:1|max:12',
-    ]);
+    public function index(Request $request)
+    {
+        // Validate filters
+        $request->validate([
+            'year' => 'nullable|integer',
+            'month' => 'nullable|integer|min:1|max:12',
+            'hub' => 'nullable|string',
+        ]);
 
-    // Base query with relationships - explicitly exclude soft-deleted records
-    $query = Sale::with(['year', 'month', 'user'])
-                 ->whereNull('deleted_at'); // Explicitly exclude soft-deleted records
+        $query = Sale::with('user')->whereNull('deleted_at');
 
-    // Apply filters
-    if ($request->filled('year')) {
-        // Filter by selected year (matching Year model's year field)
-        $query->whereHas('year', function ($q) use ($request) {
-            $q->where('year', $request->input('year'));
-        });
+        // ✅ Filter by year (derived from date)
+        if ($request->filled('year')) {
+            $query->whereYear('date', $request->input('year'));
+        }
+
+        // ✅ Filter by month (derived from date)
+        if ($request->filled('month')) {
+            $query->whereMonth('date', $request->input('month'));
+        }
+
+        // ✅ Filter by hub if provided
+        if ($request->filled('hub')) {
+            $query->where('hub', $request->input('hub'));
+        }
+
+        // ✅ Order by date (newest first)
+        $sales = $query->orderByDesc('date')
+                       ->paginate(20)
+                       ->withQueryString();
+
+        $years = Sale::getYears();
+        $months = Sale::getMonths();
+        $hubs = Sale::getHubs();
+
+        return view('sales.index', compact('sales', 'years', 'months', 'hubs'));
     }
-
-    if ($request->filled('month')) {
-        // Filter by selected month number (1–12)
-        $query->whereHas('month', function ($q) use ($request) {
-            $q->where('number', $request->input('month'));
-        });
-    }
-
-    if ($request->filled('hub')) {
-        $query->where('hub', $request->input('hub'));
-    }
-
-    // Sort newest first (by year then month)
-    $sales = $query->orderByDesc('year_id')
-                   ->orderByDesc('month_id')
-                   ->paginate(20)
-                   ->withQueryString();
-
-    // Filter dropdowns
-    $years = Year::orderByDesc('year')->pluck('year');
-    $months = Month::orderBy('number')->pluck('name_en', 'number');
-    $hubs = Sale::getHubs(); // Get from model
-
-    return view('sales.index', compact('sales', 'years', 'months','hubs'));
-}
-
 
     public function create()
     {
-        // provide data for selects (years/months) in view
-        $years = Year::orderByDesc('id')->get();
-        $months = Month::orderBy('id')->get();
-         $hubs = Sale::getHubs(); // Get from model
-
-        return view('sales.create', compact('years','months','hubs'));
+        $hubs = Sale::getHubs();
+        return view('sales.create', compact('hubs'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'year_id' => 'required|exists:years,id',
-            'month_id' => 'required|exists:months,id',
+            'date' => 'required|date',
             'hub' => 'required|in:amazon.ae,amazon.sa,noon,local,other',
             'file' => 'nullable|file|mimes:xlsx,xls,csv',
             'order_sold' => 'nullable|integer|min:0',
@@ -85,20 +69,17 @@ public function index(Request $request)
             'total_cost' => 'nullable|numeric|min:0',
             'total_profit' => 'nullable|numeric',
             'details' => 'nullable|string',
-            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // ✅ ADD THIS
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('sales_uploads');
-            $data['file_path'] = $path;
+            $data['file_path'] = $request->file('file')->store('sales_uploads', 'public');
         }
 
-        // ✅ Handle multiple photo uploads
         if ($request->hasFile('photos')) {
             $photoPaths = [];
             foreach ($request->file('photos') as $photo) {
-                $path = $photo->store('sale_photos', 'public');
-                $photoPaths[] = $path;
+                $photoPaths[] = $photo->store('sale_photos', 'public');
             }
             $data['photos'] = $photoPaths;
         }
@@ -108,35 +89,28 @@ public function index(Request $request)
         $data['order_returned'] = $data['order_returned'] ?? 0;
         $data['total_revenue'] = $data['total_revenue'] ?? 0;
         $data['total_cost'] = $data['total_cost'] ?? 0;
-        // If profit not provided, compute it
-        if (!isset($data['total_profit'])) {
-            $data['total_profit'] = ($data['total_revenue'] ?? 0) - ($data['total_cost'] ?? 0);
-        }
+        $data['total_profit'] = $data['total_profit'] ?? ($data['total_revenue'] - $data['total_cost']);
 
         Sale::create($data);
 
-        return redirect()->route('sales.index')->with('success', 'Sale month record created');
+        return redirect()->route('sales.index')->with('success', 'Sale record created successfully.');
     }
 
     public function show(Sale $sale)
     {
-        return view('sales.show', ['sale' => $sale->load(['year','month','user'])]);
+        return view('sales.show', compact('sale'));
     }
 
     public function edit(Sale $sale)
     {
-        $years = Year::orderByDesc('id')->get();
-        $months = Month::orderBy('id')->get();
-         $hubs = Sale::getHubs(); // Get from model
-
-        return view('sales.edit', ['sale' => $sale, 'years' => $years, 'months' => $months, 'hubs' => $hubs]);
+        $hubs = Sale::getHubs();
+        return view('sales.edit', compact('sale', 'hubs'));
     }
 
-        public function update(Request $request, Sale $sale)
+    public function update(Request $request, Sale $sale)
     {
         $data = $request->validate([
-            'year_id' => 'required|exists:years,id',
-            'month_id' => 'required|exists:months,id',
+            'date' => 'required|date',
             'hub' => 'required|in:amazon.ae,amazon.sa,noon,local,other',
             'file' => 'nullable|file|mimes:xlsx,xls,csv',
             'order_sold' => 'nullable|integer|min:0',
@@ -149,68 +123,58 @@ public function index(Request $request)
             'remove_photos' => 'nullable|array',
         ]);
 
-        // Handle file upload
+        // Handle file replacement
         if ($request->hasFile('file')) {
             if ($sale->file_path && Storage::disk('public')->exists($sale->file_path)) {
                 Storage::disk('public')->delete($sale->file_path);
             }
-            $data['file_path'] = $request->file('file')->store('sale_uploads', 'public');
+            $data['file_path'] = $request->file('file')->store('sales_uploads', 'public');
         }
 
-        // ✅ Handle photos properly
+        // Handle photos
         $existingPhotos = $sale->photos ?? [];
 
-        // Remove photos
-        if ($request->has('remove_photos') && is_array($request->remove_photos)) {
-            foreach ($request->remove_photos as $photoToRemove) {
-                if (($key = array_search($photoToRemove, $existingPhotos)) !== false) {
-                    Storage::disk('public')->delete($photoToRemove);
-                    unset($existingPhotos[$key]);
+        if ($request->filled('remove_photos')) {
+            foreach ($request->remove_photos as $photo) {
+                if (in_array($photo, $existingPhotos)) {
+                    Storage::disk('public')->delete($photo);
+                    $existingPhotos = array_diff($existingPhotos, [$photo]);
                 }
             }
-            $existingPhotos = array_values($existingPhotos);
         }
- 
-        // Add new photos
+
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $photo) {
-                $path = $photo->store('sales_photos', 'public');
-                $existingPhotos[] = $path;
+                $existingPhotos[] = $photo->store('sale_photos', 'public');
             }
         }
 
-        $data['photos'] = $existingPhotos;
+        $data['photos'] = array_values($existingPhotos);
 
-        // Calculate profit
-        if (!isset($data['total_profit'])) {
-            $data['total_profit'] = ($data['total_revenue'] ?? $sale->total_revenue ?? 0) 
-                                - ($data['total_cost'] ?? $sale->total_cost ?? 0);
-        }
+        // Recalculate profit if missing
+        $data['total_profit'] = $data['total_profit']
+            ?? ($data['total_revenue'] ?? $sale->total_revenue ?? 0)
+             - ($data['total_cost'] ?? $sale->total_cost ?? 0);
 
-        $sale->update($data); 
+        $sale->update($data);
 
-        return redirect()->route('sales.show', $sale)->with('success', 'Sales month updated');
+        return redirect()->route('sales.show', $sale)->with('success', 'Sale record updated successfully.');
     }
 
     public function destroy(Sale $sale)
     {
-
-        // ✅ Delete associated file
         if ($sale->file_path && Storage::disk('public')->exists($sale->file_path)) {
             Storage::disk('public')->delete($sale->file_path);
         }
 
-        // ✅ Delete associated photos
         if ($sale->photos) {
             foreach ($sale->photos as $photo) {
                 Storage::disk('public')->delete($photo);
             }
         }
 
-        // dd($sale);
-        // soft delete
         $sale->delete();
-        
-        return redirect()->route('sales.index')->with('success','Sale record deleted');
+
+        return redirect()->route('sales.index')->with('success', 'Sale record deleted successfully.');
     }
 }

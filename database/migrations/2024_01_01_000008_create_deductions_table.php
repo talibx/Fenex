@@ -1,11 +1,12 @@
-<?php 
+<?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDeductionsTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('deductions', function (Blueprint $table) {
             $table->id();
@@ -23,16 +24,19 @@ class CreateDeductionsTable extends Migration
                 'tools_materials',
                 'operation',
                 'misc'
-            ])->nullable()->change();
-
+            ])->nullable();
             $table->decimal('amount', 12, 2);
-            $table->text('note')->nullable();
+            $table->text('details')->nullable();
             $table->date('date');
-            // Add created_at and updated_at columns
+            $table->enum('hub', ['amazon.ae', 'amazon.sa', 'noon', 'local', 'other'])->default('amazon.ae');
+            $table->json('photos')->nullable();
             $table->timestamps();
-            // Add deleted_at column for soft deletes
             $table->softDeletes();
-            });
+        });
     }
-    public function down() { Schema::dropIfExists('deductions'); }
-}
+
+    public function down(): void
+    {
+        Schema::dropIfExists('deductions');
+    }
+};
